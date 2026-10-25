@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0a0e13">
+  <title>Esteira IA</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230a0e13'/%3E%3Cpath d='M6 22h20M9 22v-8h6v8M18 22v-5h5v5' stroke='%23b6f14a' stroke-width='2.4' fill='none' stroke-linecap='round'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="top">
+    <div class="brand">
+      <svg viewBox="0 0 32 32" aria-hidden="true"><path d="M4 23h24M8 23v-9h7v9M18 23v-6h6v6" /><circle cx="11.5" cy="8" r="2.5" /></svg>
+      <div>
+        <h1>Esteira<b>IA</b></h1>
+        <small id="net">conectando…</small>
+      </div>
+    </div>
+    <div class="chips">
+      <span class="chip" id="link"><i></i><span>offline</span></span>
+      <span class="chip mono" id="fps">— fps</span>
+      <span class="chip mono" id="uptime">00:00:00</span>
+    </div>
+    <button id="estop" class="estop" title="Parada de emergência (Esc)">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 2h8l6 6v8l-6 6H8l-6-6V8z" /></svg>
+      STOP
+    </button>
+  </header>
+
+  <main class="layout">
+    <div class="col">
+      <section class="card viewer">
+        <div class="stage" id="stage">
+          <img id="feed" alt="Câmera ao vivo">
+          <canvas id="overlay"></canvas>
+          <div class="hud mono">
+            <span id="hud-tracks">0 objetos</span>
+            <span id="hud-motion">movimento 0%</span>
+            <span id="hud-vfps">visão — fps</span>
+          </div>
+          <div class="placeholder" id="nocam" hidden>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7h3l2-3h8l2 3h3v13H3z" /><circle cx="12" cy="13" r="4" /><path d="M3 3l18 18" /></svg>
+            <p>Câmera indisponível — contando pelo sonar</p>
+          </div>
+        </div>
+        <div class="toolbar">
+          <button class="toggle" id="ai-toggle" aria-pressed="false">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a4 4 0 0 1 4 4v1a4 4 0 0 1 3 7 4 4 0 0 1-5 6 3 3 0 0 1-4 0 4 4 0 0 1-5-6 4 4 0 0 1 3-7V6a4 4 0 0 1 4-4zM12 2v20" /></svg>
+            IA no navegador
+          </button>
+          <span class="muted small" id="ai-status">COCO-SSD desligado</span>
+          <span class="spacer"></span>
+          <div class="segmented" id="direction" role="radiogroup" aria-label="Sentido da esteira">
+            <button data-dir="-1" title="Direita → esquerda">←</button>
+            <button data-dir="0" title="Ambos os sentidos">⇄</button>
+            <button data-dir="1" title="Esquerda → direita">→</button>
+          </div>
+          <a class="btn ghost" id="snap" href="/snapshot.jpg" download="esteira.jpg">Foto</a>
+        </div>
+        <p class="hint">Arraste a linha tracejada sobre o vídeo para mudar o ponto de contagem.</p>
+      </section>
+
+      <section class="card">
+        <header class="card-head"><h2>Últimas peças</h2><span class="muted small" id="parts-count"></span></header>
+        <div class="parts" id="parts"><p class="empty">Nenhuma peça contada ainda.</p></div>
+      </section>
+
+      <section class="card">
+        <header class="card-head"><h2>Ajustes</h2><span class="muted small" id="saved"></span></header>
+        <div class="settings">
+          <label class="field">
+            <span>Sensibilidade <output id="out-sensitivity"></output></span>
+            <input type="range" id="sensitivity" min="4" max="120" step="1">
+            <small>menor = detecta mudanças mais sutis</small>
+          </label>
+          <label class="field">
+            <span>Área mínima <output id="out-min_area"></output></span>
+            <input type="range" id="min_area" min="4" max="400" step="2">
+            <small>pixels na grade 80×60</small>
+          </label>
+          <div class="field wide">
+            <span>Rejeitar estas classes</span>
+            <div class="tags" id="reject"></div>
+          </div>
+          <label class="switch"><input type="checkbox" id="sorter"><i></i>Desviador (servo) ativo</label>
+          <label class="switch"><input type="checkbox" id="sound"><i></i>Sons</label>
+          <label class="switch"><input type="checkbox" id="vflip"><i></i>Inverter vertical</label>
+          <label class="switch"><input type="checkbox" id="hmirror"><i></i>Espelhar</label>
+          <label class="field num"><span>Servo repouso</span><input type="number" id="servo_rest" min="0" max="180"></label>
+          <label class="field num"><span>Servo desvio</span><input type="number" id="servo_push" min="0" max="180"></label>
+          <label class="field num"><span>Atraso do desvio (ms)</span><input type="number" id="push_delay" min="0" max="5000" step="50"></label>
+          <label class="field num"><span>Duração do desvio (ms)</span><input type="number" id="push_ms" min="150" max="3000" step="50"></label>
+          <label class="field num">
+            <span>XCLK da câmera</span>
+            <select id="xclk_mhz">
+              <option value="8">8 MHz</option>
+              <option value="10">10 MHz</option>
+              <option value="12">12 MHz</option>
+              <option value="16">16 MHz</option>
+              <option value="20">20 MHz</option>
+              <option value="24">24 MHz</option>
+            </select>
+            <small>reinicia a câmera; maior = mais fps</small>
+          </label>
+        </div>
+        <div class="actions">
+          <button class="btn" data-post="/api/calibrate">Recalibrar fundo</button>
+          <button class="btn" data-test="servo">Testar servo</button>
+          <button class="btn" data-test="buzzer">Testar buzzer</button>
+          <button class="btn" data-test="count">Contagem manual</button>
+          <button class="btn danger-ghost" data-post="/api/reset" data-confirm="Zerar todos os contadores?">Zerar contadores</button>
+        </div>
+      </section>
+    </div>
+
+    <div class="col">
+      <section class="kpis">
+        <article class="kpi accent"><span>Total</span><strong class="mono" id="k-total">0</strong><small id="k-session">nesta sessão</small></article>
+        <article class="kpi"><span>Por minuto</span><strong class="mono" id="k-rate">0</strong><canvas id="k-spark" width="160" height="28"></canvas></article>
+        <article class="kpi"><span>Rejeitadas</span><strong class="mono" id="k-rejected">0</strong><small id="k-reject-pct">0% do total</small></article>
+        <article class="kpi"><span>Altura</span><strong class="mono" id="k-height">—</strong><small>cm · sonar HC-SR04P</small></article>
+      </section>
+
+      <section class="card">
+        <header class="card-head"><h2>Classificação</h2></header>
+        <ul class="bars" id="classes"><li class="empty">Aguardando objetos…</li></ul>
+      </section>
+
+      <section class="card">
+        <header class="card-head"><h2>Sonar</h2><span class="muted small mono" id="sonar-text">—</span></header>
+        <div class="sonar">
+          <svg viewBox="0 0 120 120" class="belt" aria-hidden="true">
+            <rect x="48" y="4" width="24" height="12" rx="3" class="sensor" />
+            <circle cx="55" cy="10" r="3" /><circle cx="65" cy="10" r="3" />
+            <path id="beam" d="M60 16 L60 100" />
+            <rect id="object" x="40" y="100" width="40" height="0" rx="3" />
+            <rect x="8" y="100" width="104" height="8" rx="4" class="track" />
+          </svg>
+          <canvas id="sonar-chart" width="320" height="120"></canvas>
+        </div>
+      </section>
+
+      <section class="card">
+        <header class="card-head"><h2>Hardware</h2></header>
+        <div class="io">
+          <div class="rgb-led" id="io-rgb"><i></i><span>LED RGB</span></div>
+          <ul class="legend">
+            <li><span class="dot" style="background:#0aa0c8"></span>ciano respirando · operando</li>
+            <li><span class="dot" style="background:#f59e0b"></span>âmbar · objeto em análise</li>
+            <li><span class="dot rainbow"></span>cor da peça · após contagem</li>
+            <li><span class="dot" style="background:#ff4d4f"></span>vermelho · rejeição ou emergência</li>
+          </ul>
+          <div class="servo">
+            <svg viewBox="0 0 100 60" aria-hidden="true"><path d="M10 55 A40 40 0 0 1 90 55" class="arc" /><line id="needle" x1="50" y1="55" x2="50" y2="20" /></svg>
+            <span class="mono" id="io-servo">0°</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="card">
+        <header class="card-head"><h2>Eventos</h2><span class="muted small" id="clients"></span></header>
+        <ol class="log" id="log"></ol>
+      </section>
+    </div>
+  </main>
+
+  <div class="alarm" id="alarm" hidden>
+    <div class="alarm-box">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 2h8l6 6v8l-6 6H8l-6-6V8z" /><path d="M12 7v6M12 16.5v.5" /></svg>
+      <h2>Parada de emergência</h2>
+      <p>Esteira parada e desviador recolhido. Solte o botão vermelho e rearme o sistema.</p>
+      <button class="btn primary" id="rearm">Rearmar</button>
+    </div>
+  </div>
+  <div class="toast" id="toast" role="status"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>

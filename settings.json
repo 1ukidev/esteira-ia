@@ -1,0 +1,1 @@
+{"push_delay": 0, "min_area": 30, "push_ms": 600, "sound": true, "vflip": true, "xclk_mhz": 20, "sorter": true, "hmirror": false, "servo_push": 105, "line": 0.5, "direction": 0, "sensitivity": 28, "reject": ["vermelho"], "servo_rest": 15}
