@@ -184,7 +184,7 @@ async def main():
     settings = Settings(os.path.join(tempfile.gettempdir(), "esteira_sim_settings.json"))
     camera = FakeCamera()
     app = App(settings, rgb=RgbLed(1, 2, 3), buzzer=Buzzer(4),
-              servo=Servo(5), camera=camera, vision=FakeVision(), sonar=FakeSonar(),
+              servo=Servo(5, settings.servo_neutral_us), camera=camera, vision=FakeVision(), sonar=FakeSonar(),
               network={"mode": "sta", "ssid": "Simulador", "ip": "127.0.0.1", "host": "esteira",
                        "wlan": types.SimpleNamespace(status=lambda key: -58)})
     server = api.build(app, 3)

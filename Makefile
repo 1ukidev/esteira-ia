@@ -1,6 +1,6 @@
 PORT ?= auto
 MPREMOTE = uv run mpremote connect $(PORT)
-FIRMWARE ?= firmware.bin
+FIRMWARE ?= ESP32_GENERIC_S3-SPIRAM_OCT-20260824-v1.29.0.bin
 
 upload:
 	$(MPREMOTE) fs cp main.py config.py ssd1306.py : + fs cp -r app www : + reset

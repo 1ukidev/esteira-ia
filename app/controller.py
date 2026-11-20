@@ -44,7 +44,7 @@ class App:
         self._subscribers = []
         self._reject_until = 0
         self._glow = ((0, 0, 0), 0)
-        self._pushes = 0
+        self._push_task = None
         self._snapshot = (0, "{}")
         self.apply_settings({})
 
@@ -89,8 +89,8 @@ class App:
             if self.vision is not None:
                 self.vision.recalibrate()
         self.buzzer.muted = not s.sound
-        if not self._pushes:
-            self.servo.move(s.servo_rest)
+        if self._push_task is None:
+            self.servo.set_pulse(s.servo_neutral_us)
         return applied
 
     def _restart_camera(self, applied):
@@ -109,7 +109,10 @@ class App:
         if self.estop:
             return
         self.estop = True
-        self.servo.move(self.settings.servo_rest)
+        self.servo.set_pulse(self.settings.servo_neutral_us)
+        if self._push_task is not None:
+            self._push_task.cancel()
+            self._push_task = None
         self.tracker.clear()
         self.tracks = []
         self.buzzer.play("alarm", force=True)
@@ -175,7 +178,8 @@ class App:
         if reject:
             self.rejected += 1
             self._reject_until = time.ticks_add(now, 700)
-            asyncio.create_task(self.push())
+            if not self.request_push():
+                self.log("Desviador ocupado; não acionado para a peça %d" % self.total, "warn")
         self.buzzer.play("reject" if reject else "count")
 
         event = {
@@ -192,18 +196,28 @@ class App:
         self.history = (self.history + [event])[-12:]
         self.publish("count", event)
 
-    async def push(self):
+    def request_push(self):
+        if self.estop or self._push_task is not None:
+            return False
+        self._push_task = asyncio.create_task(self._push())
+        return True
+
+    async def _push(self):
         s = self.settings
-        if s.push_delay:
-            await asyncio.sleep_ms(s.push_delay)
-        if self.estop:
-            return
-        self._pushes += 1
-        self.servo.move(s.servo_push)
-        await asyncio.sleep_ms(s.push_ms)
-        self._pushes -= 1
-        if not self._pushes:
-            self.servo.move(s.servo_rest)
+        try:
+            if s.push_delay:
+                await asyncio.sleep_ms(s.push_delay)
+            neutral, drive = s.servo_neutral_us, s.servo_drive_us
+            advance_ms, return_ms = s.servo_advance_ms, s.servo_return_ms
+            self.servo.set_pulse(neutral + drive)
+            await asyncio.sleep_ms(advance_ms)
+            self.servo.set_pulse(neutral - drive)
+            await asyncio.sleep_ms(return_ms)
+        finally:
+            # Um ciclo cancelado pode terminar depois do rearme e de um novo acionamento.
+            if self._push_task is asyncio.current_task():
+                self._push_task = None
+                self.servo.set_pulse(s.servo_neutral_us)
 
     def snapshot(self):
         stamp, cached = self._snapshot
@@ -232,7 +246,7 @@ class App:
             },
             "io": {
                 "rgb": self.rgb.hex,
-                "servo": self.servo.angle,
+                "servo": self.servo.pulse_us,
             },
             "clients": self.clients,
             "mem": gc.mem_free(),

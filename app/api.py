@@ -127,7 +127,8 @@ def build(app, max_streams):
             raise HttpError(409, "sistema em emergência")
         device = req.json().get("device")
         if device == "servo":
-            asyncio.create_task(app.push())
+            if not app.request_push():
+                raise HttpError(409, "desviador ocupado")
         elif device == "buzzer":
             app.buzzer.play("ready", force=True)
         elif device == "count":

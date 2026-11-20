@@ -22,6 +22,7 @@ const TF_SCRIPTS = [
   'https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd@2.2.3/dist/coco-ssd.min.js',
 ];
 const MAX_PARTS = 12;
+const SERVO_SETTINGS = ['servo_neutral_us', 'servo_drive_us', 'push_delay', 'servo_advance_ms', 'servo_return_ms'];
 
 const ui = {
   grid: [80, 60],
@@ -108,7 +109,7 @@ function reflectSettings() {
     $(`#out-${key}`).textContent = s[key];
   }
   for (const key of ['sorter', 'sound', 'vflip', 'hmirror']) $(`#${key}`).checked = s[key];
-  for (const key of ['servo_rest', 'servo_push', 'push_delay', 'push_ms', 'xclk_mhz']) $(`#${key}`).value = s[key];
+  for (const key of [...SERVO_SETTINGS, 'xclk_mhz']) $(`#${key}`).value = s[key];
   for (const button of $$('#direction button')) button.classList.toggle('on', Number(button.dataset.dir) === s.direction);
   renderRejectTags();
 }
@@ -135,8 +136,12 @@ function bindControls() {
   for (const key of ['sorter', 'sound', 'vflip', 'hmirror']) {
     $(`#${key}`).onchange = (e) => save({ [key]: e.target.checked });
   }
-  for (const key of ['servo_rest', 'servo_push', 'push_delay', 'push_ms']) {
-    $(`#${key}`).onchange = (e) => save({ [key]: Number(e.target.value) });
+  for (const key of SERVO_SETTINGS) {
+    const input = $(`#${key}`);
+    input.onchange = () => {
+      if (input.checkValidity()) save({ [key]: input.valueAsNumber });
+      else input.reportValidity();
+    };
   }
   $('#xclk_mhz').onchange = async (e) => {
     const requested = Number(e.target.value);
@@ -325,8 +330,7 @@ function renderSonar(sonar) {
 function renderIo(io) {
   const lit = io.rgb !== '#000000';
   $('#io-rgb i').style.cssText = lit ? `background:${io.rgb};box-shadow:0 0 18px ${io.rgb}` : '';
-  $('#needle').style.transform = `rotate(${io.servo - 90}deg)`;
-  $('#io-servo').textContent = `${io.servo}°`;
+  $('#io-servo').textContent = `${io.servo} µs`;
 }
 
 /* ---------- peças contadas ---------- */

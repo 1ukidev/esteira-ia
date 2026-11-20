@@ -66,7 +66,8 @@ async def main():
     xclk = reserve_camera_clock(config.CAMERA_PINS["xclk_pin"])
     rgb = RgbLed(config.RGB_RED, config.RGB_GREEN, config.RGB_BLUE)
     buzzer = Buzzer(config.BUZZER)
-    servo = Servo(config.SERVO, settings.servo_rest)
+    servo = Servo(config.SERVO, settings.servo_neutral_us)
+    on_exit.append(lambda: servo.set_pulse(settings.servo_neutral_us))
     display = optional("display OLED", start_display)
 
     buzzer.play("boot", force=True)

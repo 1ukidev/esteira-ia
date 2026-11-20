@@ -11,6 +11,8 @@ from micropython import const
 W = const(80)
 H = const(60)
 N = const(4800)
+PREVIEW_W = const(40)
+PREVIEW_H = const(30)
 MAX_BLOBS = const(32)
 STRIDE = const(7)
 
@@ -223,12 +225,18 @@ def colors(px: ptr16, labels: ptr8, sums: ptr32, n: int):
 
 @micropython.viper
 def render(mask: ptr8, out: ptr8):
+    # Cada pixel da prévia representa um bloco de 2×2 da máscara original.
     i = 0
-    while i < N >> 3:
+    while i < (PREVIEW_W * PREVIEW_H) >> 3:
         out[i] = 0
         i += 1
-    i = 0
-    while i < N:
-        if mask[i] != 0:
-            out[i >> 3] = out[i >> 3] | (0x80 >> (i & 7))
-        i += 1
+    y = 0
+    while y < PREVIEW_H:
+        x = 0
+        while x < PREVIEW_W:
+            src = (y * W + x) * 2
+            if (mask[src] | mask[src + 1] | mask[src + W] | mask[src + W + 1]) != 0:
+                i = y * PREVIEW_W + x
+                out[i >> 3] = out[i >> 3] | (0x80 >> (i & 7))
+            x += 1
+        y += 1

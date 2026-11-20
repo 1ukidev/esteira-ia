@@ -69,16 +69,18 @@ class Buzzer:
 
 
 class Servo:
-    def __init__(self, pin, angle=0):
-        self._pwm = PWM(Pin(pin), freq=50)
-        self.angle = None
-        self.move(angle)
+    """Servo de rotação contínua comandado pela largura do pulso."""
 
-    def move(self, angle):
-        angle = max(0, min(180, int(angle)))
-        if angle != self.angle:
-            self.angle = angle
-            self._pwm.duty_ns(500_000 + angle * 2_000_000 // 180)
+    def __init__(self, pin, neutral_us):
+        # O MicroPython do ESP32 exige o temporizador ativo para validar duty_ns.
+        self._pwm = PWM(Pin(pin), freq=50, duty_u16=0)
+        self.pulse_us = None
+        self.set_pulse(neutral_us)
+
+    def set_pulse(self, pulse_us):
+        if pulse_us != self.pulse_us:
+            self._pwm.duty_ns(pulse_us * 1000)
+            self.pulse_us = pulse_us
 
 
 class Button:

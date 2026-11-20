@@ -212,7 +212,7 @@
 <text x="1132" y="452" font-size="11" fill="#1f2933" text-anchor="end" font-weight="normal" font-style="normal">VCC</text>
 <text x="1132" y="488" font-size="11" fill="#1f2933" text-anchor="end" font-weight="normal" font-style="normal">GND</text>
 <text x="1070" y="506" font-size="13" fill="#1f2933" text-anchor="middle" font-weight="bold" font-style="normal">OLED SSD1306</text>
-<text x="1070" y="521" font-size="10" fill="#6b7280" text-anchor="middle" font-weight="normal" font-style="normal">128×64 · I2C 0x3C</text>
+<text x="1070" y="521" font-size="10" fill="#6b7280" text-anchor="middle" font-weight="normal" font-style="normal">128×32 · I2C 0x3C</text>
 <polyline points="1140,448 1180,448" fill="none" stroke="#ea580c" stroke-width="2" stroke-linejoin="round"/>
 <polyline points="1180,448 1180,434" fill="none" stroke="#ea580c" stroke-width="2" stroke-linejoin="round"/>
 <line x1="1170" y1="434" x2="1190" y2="434" stroke="#ea580c" stroke-width="2.5"/>

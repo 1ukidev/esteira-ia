@@ -3,6 +3,7 @@ from array import array
 from app import kernels as k
 
 GRID = (k.W, k.H)
+PREVIEW_GRID = (k.PREVIEW_W, k.PREVIEW_H)
 
 _FAST, _SLOW, _WARMUP_FAST = 5, 9, 2
 _WARMUP_FRAMES = 12
@@ -105,4 +106,5 @@ class Vision:
         return blobs
 
     def render_mask(self, out):
+        """Compacta a prévia de meia resolução em um framebuffer MONO_HLSB."""
         k.render(self.mask, out)

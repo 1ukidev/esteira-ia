@@ -87,10 +87,11 @@
           <label class="switch"><input type="checkbox" id="sound"><i></i>Sons</label>
           <label class="switch"><input type="checkbox" id="vflip"><i></i>Inverter vertical</label>
           <label class="switch"><input type="checkbox" id="hmirror"><i></i>Espelhar</label>
-          <label class="field num"><span>Servo repouso</span><input type="number" id="servo_rest" min="0" max="180"></label>
-          <label class="field num"><span>Servo desvio</span><input type="number" id="servo_push" min="0" max="180"></label>
-          <label class="field num"><span>Atraso do desvio (ms)</span><input type="number" id="push_delay" min="0" max="5000" step="50"></label>
-          <label class="field num"><span>Duração do desvio (ms)</span><input type="number" id="push_ms" min="150" max="3000" step="50"></label>
+          <label class="field num"><span>Pulso neutro do servo (µs)</span><input type="number" id="servo_neutral_us" min="1450" max="1550" required></label>
+          <label class="field num"><span>Variação do pulso no avanço (µs)</span><input type="number" id="servo_drive_us" min="-250" max="250" required><small>Inverta o sinal para trocar o sentido.</small></label>
+          <label class="field num"><span>Atraso do desvio (ms)</span><input type="number" id="push_delay" min="0" max="5000" required></label>
+          <label class="field num"><span>Tempo de avanço (ms)</span><input type="number" id="servo_advance_ms" min="20" max="1000" required></label>
+          <label class="field num"><span>Tempo de retorno (ms)</span><input type="number" id="servo_return_ms" min="20" max="1000" required></label>
           <label class="field num">
             <span>XCLK da câmera</span>
             <select id="xclk_mhz">
@@ -152,8 +153,8 @@
             <li><span class="dot" style="background:#ff4d4f"></span>vermelho · rejeição ou emergência</li>
           </ul>
           <div class="servo">
-            <svg viewBox="0 0 100 60" aria-hidden="true"><path d="M10 55 A40 40 0 0 1 90 55" class="arc" /><line id="needle" x1="50" y1="55" x2="50" y2="20" /></svg>
-            <span class="mono" id="io-servo">0°</span>
+            <span class="muted small">Pulso do servo</span>
+            <span class="mono" id="io-servo">—</span>
           </div>
         </div>
       </section>
